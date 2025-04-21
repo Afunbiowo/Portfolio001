@@ -1,0 +1,462 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Manager Portfolio</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background: linear-gradient(135deg, #e6f0fa 0%, #f7e9ff 100%);
+      background-attachment: fixed;
+      transition: background 0.3s, color 0.3s;
+    }
+    body.dark {
+      background: linear-gradient(135deg, #2c2c2c 0%, #4a3b5e 100%);
+      color: #e0e0e0;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+    nav {
+      background: #005b99;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    nav .container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+    }
+    nav a {
+      color: white;
+      text-decoration: none;
+      margin: 0 15px;
+      font-size: 1.1em;
+      transition: color 0.3s;
+    }
+    nav a:hover {
+      color: #f5c518;
+    }
+    .theme-toggle {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.2em;
+      cursor: pointer;
+    }
+    .hero {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: url('https://images.unsplash.com/photo-1516321310766-66f1f1c7e605?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80') no-repeat center center/cover;
+      color: white;
+      position: relative;
+      animation: fadeIn 1s ease-in;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 91, 153, 0.5);
+    }
+    .hero .container {
+      position: relative;
+      z-index: 1;
+    }
+    .hero h1 {
+      font-size: 3.5em;
+      margin-bottom: 10px;
+    }
+    .hero p {
+      font-size: 1.6em;
+      margin-bottom: 20px;
+    }
+    .btn {
+      display: inline-block;
+      padding: 12px 25px;
+      background: #f5c518;
+      color: #333;
+      text-decoration: none;
+      border-radius: 5px;
+      font-weight: bold;
+      transition: background 0.3s, transform 0.2s;
+    }
+    .btn:hover {
+      background: #e0b000;
+      transform: scale(1.05);
+    }
+    section {
+      padding: 80px 0;
+      animation: fadeIn 1s ease-in;
+    }
+    section h2 {
+      text-align: center;
+      font-size: 2.8em;
+      margin-bottom: 30px;
+      color: #005b99;
+    }
+    body.dark section h2 {
+      color: #b3d4fc;
+    }
+    .about {
+      background: url('https://images.unsplash.com/photo-1516321310766-66f1f1c7e605?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80') no-repeat center center/cover;
+      background-attachment: fixed;
+      position: relative;
+    }
+    .about::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.9);
+    }
+    body.dark .about::before {
+      background: rgba(0, 0, 0, 0.85);
+    }
+    .about-content {
+      position: relative;
+      display: flex;
+      gap: 40px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .about-content img {
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      object-fit: cover;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      border: 3px solid #f5c518;
+    }
+    .about-content p {
+      flex: 1;
+      font-size: 1.2em;
+    }
+    .skills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .skill {
+      background: #005b99;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 1em;
+      transition: background 0.3s;
+    }
+    .skill:hover {
+      background: #003d66;
+    }
+    .projects {
+      background: url('https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80') no-repeat center center/cover;
+      background-attachment: fixed;
+      position: relative;
+    }
+    .projects::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.9);
+    }
+    body.dark .projects::before {
+      background: rgba(0, 0, 0, 0.85);
+    }
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 25px;
+    }
+    .project-card {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    body.dark .project-card {
+      background: #333;
+    }
+    .project-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+    .project-card img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+    }
+    .project-card h3 {
+      font-size: 1.6em;
+      margin: 15px;
+      color: #005b99;
+    }
+    body.dark .project-card h3 {
+      color: #b3d4fc;
+    }
+    .project-card p {
+      margin: 0 15px 15px;
+      font-size: 1em;
+    }
+    .contact {
+      background: url('https://images.unsplash.com/photo-1516321310766-66f1f1c7e605?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80') no-repeat center center/cover;
+      background-attachment: fixed;
+      position: relative;
+    }
+    .contact::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.9);
+    }
+    body.dark .contact::before {
+      background: rgba(0, 0, 0, 0.85);
+    }
+    .contact form {
+      max-width: 600px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    .contact input, .contact textarea {
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 1em;
+    }
+    body.dark .contact input, body.dark .contact textarea {
+      background: #444;
+      color: #e0e0e0;
+      border-color: #666;
+    }
+    .contact button {
+      align-self: center;
+    }
+    .social-links {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .social-links a {
+      margin: 0 15px;
+      font-size: 1.8em;
+      color: #005b99;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    body.dark .social-links a {
+      color: #b3d4fc;
+    }
+    .social-links a:hover {
+      color: #f5c518;
+    }
+    footer {
+      text-align: center;
+      padding: 20px;
+      background: #005b99;
+      color: white;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 2.5em; }
+      .hero p { font-size: 1.3em; }
+      .about-content { flex-direction: column; text-align: center; }
+      .about-content img { width: 180px; height: 180px; }
+      nav .container { flex-direction: column; gap: 10px; }
+      nav a { margin: 5px; }
+      .project-card img { height: 150px; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="container">
+      <div>
+        <a href="#home">Home</a>
+        <a href="#about">About</a>
+        <a href="#projects">Projects</a>
+        <a href="#contact">Contact</a>
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+    </div>
+  </nav>
+
+  <section id="home" class="hero">
+    <div class="container">
+      <h1>Hello, I'm [Your Name]</h1>
+      <p>Product Manager Driving Impactful Solutions</p>
+      <a href="#projects" class="btn">Explore My Work</a>
+    </div>
+  </section>
+
+  <section id="about" class="about">
+    <div class="container">
+      <h2>About Me</h2>
+      <div class="about-content">
+        <img src="https://images.unsplash.com/photo-1516321310766-66f1f1c7e605?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" alt="Profile Picture">
+        <p>I'm [Your Name], a passionate product manager with experience in leading cross-functional teams to deliver user-focused products. Skilled in product roadmapping, stakeholder alignment, and agile methodologies, I thrive on transforming ideas into successful outcomes.</p>
+      </div>
+      <div class="skills">
+        <span class="skill">Product Roadmapping</span>
+        <span class="skill">Agile/Scrum</span>
+        <span class="skill">Stakeholder Management</span>
+        <span class="skill">User Research</span>
+        <span class="skill">Data Analysis</span>
+        <span class="skill">UX Design Collaboration</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="projects" class="projects">
+    <div class="container">
+      <h2>My Projects</h2>
+      <div class="projects-grid">
+        <div class="project-card">
+          <img src="https://images.unsplash.com/photo-1551288049-b1f3c6f3a2f9?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Product Launch">
+          <h3>Mobile App Launch</h3>
+          <p>Led the end-to-end launch of a mobile banking app, increasing user adoption by 40% through targeted feature prioritization.</p>
+          <a href="#" class="btn">View Details</a>
+        </div>
+        <div class="project-card">
+          <img src="https://images.unsplash.com/photo-1516321310766-66f1f1c7e605?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Feature Rollout">
+          <h3>Feature Rollout</h3>
+          <p>Managed the rollout of a real-time analytics dashboard, improving customer retention by 25% with data-driven insights.</p>
+          <a href="#" class="btn">View Details</a>
+        </div>
+        <div class="project-card">
+          <img src="https://images.unsplash.com/photo-1516321310766-66f1f1c7e605?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Platform Redesign">
+          <h3>Platform Redesign</h3>
+          <p>Orchestrated a UX overhaul for an e-commerce platform, boosting conversion rates by 15% through user research.</p>
+          <a href="#" class="btn">View Details</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact" class="contact">
+    <div class="container">
+      <h2>Get in Touch</h2>
+      <form id="contactForm">
+        <input type="text" name="name" placeholder="Your Name" required>
+        <input type="email" name="email" placeholder="Your Email" required>
+        <textarea name="message" placeholder="Your Message" rows="5" required></textarea>
+        <button type="submit" class="btn">Send Message</button>
+      </form>
+      <div class="social-links">
+        <a href="#">LinkedIn</a>
+        <a href="#">Twitter</a>
+        <a href="#">Portfolio</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>© 2025 [Your Name]. All rights reserved.</p>
+  </footer>
+
+  <script>
+    // Smooth scrolling for nav links
+    document.querySelectorAll('nav a').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        const section = document.querySelector(this.getAttribute('href'));
+        section.scrollIntoView({ behavior: 'smooth' });
+      });
+    });
+
+    // Theme toggle
+    function toggleTheme() {
+      document.body.classList.toggle('dark');
+      const isDark = document.body.classList.contains('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      document.querySelector('.theme-toggle').textContent = isDark ? '☀️' : '🌙';
+    }
+
+    // Load saved theme
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') {
+        document.body.classList.add('dark');
+        document.querySelector('.theme-toggle').textContent = '☀️';
+      }
+    });
+
+    // Contact form submission
+    document.getElementById('contactForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      alert('Message sent! (This is a demo; no real email is sent.)');
+      this.reset();
+    });
+  </script>
+</body>
+</html>
